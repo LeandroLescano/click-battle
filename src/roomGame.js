@@ -19,25 +19,52 @@ function RoomGame(props) {
   const [visitorUser, setVisitorUser] = useState(null);
   const history = useHistory();
 
-  //   useEffect(() => {
-  //     return () => {
-  //       alert("GoodBye!");
-  //     };
-  //   }, []);
+  //useEffect for update database when visitor or local leaves.
+  useEffect(() => {
+    let id = sessionStorage.getItem("actualIDGame");
+    let user = sessionStorage.getItem("user");
+    let userOwner = sessionStorage.getItem("actualOwner");
+    if (user === userOwner) {
+      window.onbeforeunload = confirmExit;
+      function confirmExit() {
+        firebase.database().ref(`games/${id}`).remove();
+      }
+    } else {
+      window.onbeforeunload = confirmExit;
+      function confirmExit() {
+        firebase.database().ref(`games/${id}`).update({ visitorUser: null });
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    let id = sessionStorage.getItem("actualIDGame");
+    let user = sessionStorage.getItem("user");
+    let userOwner = sessionStorage.getItem("actualOwner");
+    if (user === userOwner) {
+      return () => {
+        firebase.database().ref(`games/${id}`).remove();
+      };
+    } else {
+      return () => {
+        firebase.database().ref(`games/${id}`).update({ visitorUser: null });
+      };
+    }
+  }, []);
 
   //useEffect for update all data in state
   useEffect(() => {
-    // setIsLocal(props.isLocal);
     let actualUser = sessionStorage.getItem("user");
     let id = window.location.pathname.slice(1);
     setIdGame(id);
+    sessionStorage.setItem("actualIDGame", id);
     let db = firebase.database();
     db.ref(`games/${id}/`).on("value", (snapshot) => {
       if (snapshot.val() !== null) {
         setVisitorClicks(snapshot.val().visitor);
         setLocalClicks(snapshot.val().local);
         setTimer(snapshot.val().timer);
-        setTimeToStart(snapshot.val().timerStart);
+        setTimeToStart(snapshot.val().timeStart);
         setStart(snapshot.val().currentGame);
         if (snapshot.val().gameStart) {
           setStartCountdown(true);
@@ -101,7 +128,7 @@ function RoomGame(props) {
         firebase
           .database()
           .ref(`games/${idGame}`)
-          .update({ timerStart: timeToStart - 1 });
+          .update({ timeStart: timeToStart - 1 });
       }, 1000);
       return () => clearInterval(intervalIdStart);
     }
@@ -135,7 +162,7 @@ function RoomGame(props) {
       local: 0,
       visitor: 0,
       gameStart: false,
-      timerStart: 3,
+      timeStart: 3,
       currentGame: false,
     });
   };
