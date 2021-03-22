@@ -78,8 +78,11 @@ function RoomGame(props) {
         } else {
           setIsLocal(false);
         }
+      } else {
+        history.push("/");
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   //useEffect for update timer in state and show result
@@ -180,7 +183,11 @@ function RoomGame(props) {
                   Opponent has <br />
                   {isLocal ? visitorClicks : localClicks} clicks!
                 </h4>
-                <button disabled={!start} className="btn-click">
+                <button
+                  disabled={!start}
+                  id="visitorButton"
+                  className="btn-click"
+                >
                   Click
                 </button>
                 <p className="mt-3">
@@ -209,7 +216,7 @@ function RoomGame(props) {
             {isLocal ? (
               <button
                 className="btn-click mb-5"
-                disabled={start}
+                disabled={start || !!visitorUser}
                 onClick={() => handleStart()}
               >
                 Start!
@@ -227,13 +234,15 @@ function RoomGame(props) {
               {isLocal ? localClicks : visitorClicks}
             </h2>
             {isLocal && (
-              <button className="btn btn-primary" onClick={handleReset}>
+              <button className="btn-click mb-4" onClick={handleReset}>
                 Reset
               </button>
             )}
           </div>
         )}
-        {timer !== undefined && <h2>{timer} seconds remaining!</h2>}
+        {timer !== undefined && (
+          <h2 className="text-center">{timer} seconds remaining!</h2>
+        )}
         <p>You are {isLocal ? "Local" : "Visitor"}</p>
       </main>
       {startCountdown && timeToStart >= 0 && (
