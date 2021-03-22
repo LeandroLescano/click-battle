@@ -216,7 +216,7 @@ function RoomGame(props) {
             {isLocal ? (
               <button
                 className="btn-click mb-5"
-                disabled={start || !!visitorUser}
+                disabled={!start && !!!visitorUser}
                 onClick={() => handleStart()}
               >
                 Start!
@@ -250,6 +250,9 @@ function RoomGame(props) {
           {timeToStart === 0 ? "Go" : timeToStart}
         </div>
       )}
+      <div className="start-countdown">
+        {timeToStart === 0 ? "Go" : timeToStart}
+      </div>
     </div>
   );
 }
