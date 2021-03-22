@@ -250,9 +250,6 @@ function RoomGame(props) {
           {timeToStart === 0 ? "Go" : timeToStart}
         </div>
       )}
-      <div className="start-countdown">
-        {timeToStart === 0 ? "Go" : timeToStart}
-      </div>
     </div>
   );
 }
