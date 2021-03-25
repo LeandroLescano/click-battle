@@ -69,6 +69,12 @@ a {
   min-height: 100%;
 }
 
+.score-container{
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
+
 .start-countdown {
   position: absolute;
   font-size: 5rem;

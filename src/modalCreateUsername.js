@@ -12,10 +12,12 @@ function ModalCreateUsername(props) {
   };
 
   const handleCreateUser = () => {
-    let key = sessionStorage.getItem("userKey");
-    firebase.database().ref(`users/${key}`).update({ username: name });
-    sessionStorage.setItem("user", name);
-    props.close();
+    if(name.length >= 3){
+      let key = sessionStorage.getItem("userKey");
+      firebase.database().ref(`users/${key}`).update({ username: name });
+      sessionStorage.setItem("user", name);
+      props.close();
+    }
   };
 
   return (
@@ -27,13 +29,13 @@ function ModalCreateUsername(props) {
       aria-labelledby="modalCreateUsernameLabel"
       aria-hidden="true"
     >
-      <div className="modal-dialog modal-lg modal-dialog-centered">
+      <div className="modal-dialog modal-md modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-body text-center">
             <h4>Enter your username</h4>
             <input
               type="text"
-              className="form-name mb-2"
+              className="form-name mb-2 me-5"
               label="username"
               value={name}
               placeholder="Username"
@@ -43,7 +45,7 @@ function ModalCreateUsername(props) {
               className="btn-click py-2 px-3 mb-3"
               onClick={() => handleCreateUser()}
             >
-              Create
+              Choose
             </button>
           </div>
         </div>

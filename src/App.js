@@ -29,6 +29,7 @@ function App() {
                   setUser({
                     username: value[1].username,
                     maxScore: value[1].maxScore,
+                    email: value[1].email,
                   });
                   return;
                 }
@@ -148,7 +149,6 @@ function App() {
               return;
             }
           });
-          document.getElementById("btnModal").click();
           if (userNew) {
             let ref = firebase.database().ref("users").push();
             ref.set({
@@ -156,10 +156,9 @@ function App() {
               maxScore: 0,
               username: data.user.displayName,
             });
-            // TODO Change name for username selected by user
-            sessionStorage.setItem("user", data.user.displayName);
             sessionStorage.setItem("userKey", ref.key);
             setUser(data.user.displayName);
+            document.getElementById("btnModal").click();
             document.getElementById("btnModalUsername").click();
           }
         }
@@ -284,6 +283,7 @@ function App() {
             </a>
           </div>
         </footer>
+          {user.email && <div className="score-container float-right">Max score: {user.maxScore}</div>}
       </div>
       <ModalLogin
         user={user}

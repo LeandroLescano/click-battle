@@ -125,8 +125,21 @@ function RoomGame(props) {
             container.innerHTML = "Draw";
           }
         }
-        // TODO update maxScore
-        // if(user)
+        if(isLocal){
+          if(localUser.email){
+            if(localClicks > localUser.maxScore){
+              let key = sessionStorage.getItem("userKey");
+              firebase.database().ref(`users/${key}`).update({maxScore: localClicks})
+            }
+          }
+        }else{
+          if(visitorUser.email){
+            if(visitorClicks > visitorUser.maxScore){
+              let key = sessionStorage.getItem("userKey");
+              firebase.database().ref(`users/${key}`).update({maxScore: visitorClicks})
+            }
+          }
+        }
         return;
       }
 
