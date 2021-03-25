@@ -148,22 +148,23 @@ function App() {
               return;
             }
           });
+          document.getElementById("btnModal").click();
+          if (userNew) {
+            let ref = firebase.database().ref("users").push();
+            ref.set({
+              email: userEmail,
+              maxScore: 0,
+              username: data.user.displayName,
+            });
+            // TODO Change name for username selected by user
+            sessionStorage.setItem("user", data.user.displayName);
+            sessionStorage.setItem("userKey", ref.key);
+            setUser(data.user.displayName);
+            document.getElementById("btnModalUsername").click();
+          }
         }
       });
-    document.getElementById("btnModal").click();
-    if (userNew) {
-      let ref = firebase.database().ref("users").push();
-      ref.set({
-        email: userEmail,
-        maxScore: 0,
-        username: data.user.displayName,
-      });
-      // TODO Change name for username selected by user
-      sessionStorage.setItem("user", data.user.displayName);
-      sessionStorage.setItem("userKey", ref.key);
-      setUser(data.user.displayName);
-      document.getElementById("btnModalUsername").click();
-    }
+
   };
 
   const handleLogOut = () => {
@@ -197,6 +198,7 @@ function App() {
             <h1 className="text-center mb-4">Click battle!</h1>
             <button
               className="btn-click mb-3 mb-md-5"
+              disabled={!!!user.username}
               onClick={() => handleCreate()}
             >
               Create game
