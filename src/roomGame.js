@@ -71,9 +71,11 @@ function RoomGame(props) {
         } else {
           setStartCountdown(false);
         }
-        setLocalUser(snapshot.val().localUser);
-        setVisitorUser(snapshot.val().visitorUser);
-        if (snapshot.val().localUser === actualUser) {
+        setLocalUser(snapshot.val().localUser.username);
+        if (snapshot.val().visitorUser) {
+          setVisitorUser(snapshot.val().visitorUser.username);
+        }
+        if (snapshot.val().localUser.username === actualUser) {
           setIsLocal(true);
         } else {
           setIsLocal(false);

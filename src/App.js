@@ -4,11 +4,42 @@ import Swal from "sweetalert2";
 import { Link } from "react-router-dom";
 import "firebase/database";
 import "../src/styles/styles.scss";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faUser } from "@fortawesome/free-solid-svg-icons";
+import ModalLogin from "./modalLogin";
+import ModalCreateUsername from "./modalCreateUsername";
 
 function App() {
   const [listGames, setListGames] = useState([]);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState({ username: "", maxScore: 0 });
   const [roomName, setRoomName] = useState("");
+
+  document.addEventListener("DOMContentLoaded", () => {
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        firebase
+          .database()
+          .ref("users")
+          .on("value", (snapshot) => {
+            if (snapshot.val() !== null) {
+              Object.entries(snapshot.val()).forEach((value) => {
+                if (value[1].email && value[1].email === user.email) {
+                  sessionStorage.setItem("user", value[1].username);
+                  sessionStorage.setItem("userKey", value[0]);
+                  setUser({
+                    username: value[1].username,
+                    maxScore: value[1].maxScore,
+                  });
+                  return;
+                }
+              });
+            }
+          });
+      } else {
+        document.getElementById("btnModal").click();
+      }
+    });
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -26,19 +57,18 @@ function App() {
       });
     let currentUser = sessionStorage.getItem("user");
     if (!!currentUser) {
-      setUser(currentUser);
-    } else {
-      login();
+      setUser({ ...user, username: currentUser });
     }
 
     return () => (mounted = false);
   }, []);
 
+  //Function for create room
   const handleCreate = () => {
     let newGameRef, newRoomName;
     newGameRef = firebase.database().ref("games/").push();
     if (roomName === "") {
-      newRoomName = user + "'s room";
+      newRoomName = user.username + "'s room";
     } else {
       newRoomName = roomName;
     }
@@ -58,33 +88,106 @@ function App() {
     window.location.href = "/" + newGameRef.key;
   };
 
-  const handleEnterGame = (idGame, owner) => {
-    sessionStorage.setItem("actualIDGame", idGame);
-    sessionStorage.setItem("actualOwner", owner);
-    if (owner !== user) {
-      firebase.database().ref(`games/${idGame}`).update({ visitorUser: user });
+  //Function for enter room
+  const handleEnterGame = (idGame, owner, visitor) => {
+    if (visitor) {
+      Swal.fire({
+        icon: "warning",
+        title: "Room is full",
+        toast: true,
+        showConfirmButton: false,
+        position: "bottom-end",
+        timer: 3000,
+      });
+    } else {
+      sessionStorage.setItem("actualIDGame", idGame);
+      sessionStorage.setItem("actualOwner", owner);
+      if (owner !== user) {
+        firebase
+          .database()
+          .ref(`games/${idGame}`)
+          .update({ visitorUser: user });
+      }
     }
   };
 
+  //Function for handle input room name
   const handleChange = (e) => {
     setRoomName(e.target.value);
   };
 
-  const login = () => {
-    Swal.fire({
-      title: "Please enter your name",
-      input: "text",
-    }).then((response) => {
-      if (response.isConfirmed) {
-        sessionStorage.setItem("user", response.value);
-        setUser(response.value);
-      }
-    });
+  const handleLoginGuest = (user) => {
+    sessionStorage.setItem("user", user);
+    let ref = firebase.database().ref("users").push();
+    ref.set({ username: user });
+    setUser(user);
+    document.getElementById("btnModal").click();
+  };
+
+  const handleLoginGoogle = (data) => {
+    //Check if user is new
+    let userEmail = data.user.email;
+    let userNew = true;
+    firebase
+      .database()
+      .ref("users")
+      .on("value", (snapshot) => {
+        if (snapshot.val() !== null) {
+          Object.entries(snapshot.val()).forEach((value) => {
+            if (value[1].email && value[1].email === userEmail) {
+              userNew = false;
+              sessionStorage.setItem("user", value[1].username);
+              sessionStorage.setItem("userKey", value[0]);
+              setUser({
+                username: value[1].username,
+                maxScore: value[1].maxScore,
+              });
+              return;
+            }
+          });
+        }
+      });
+    document.getElementById("btnModal").click();
+    if (userNew) {
+      let ref = firebase.database().ref("users").push();
+      ref.set({
+        email: userEmail,
+        maxScore: 0,
+        username: data.user.displayName,
+      });
+      // TODO Change name for username selected by user
+      sessionStorage.setItem("user", data.user.displayName);
+      sessionStorage.setItem("userKey", ref.key);
+      setUser(data.user.displayName);
+      document.getElementById("btnModalUsername").click();
+    }
+  };
+
+  const handleLogOut = () => {
+    if (firebase.auth().currentUser) {
+      firebase.auth().signOut();
+    }
+    setUser({ ...user, username: "", maxScore: 0 });
+    document.getElementById("btnModal").click();
   };
 
   return (
     <>
       <div className="main">
+        <button
+          type="button"
+          hidden
+          data-bs-toggle="modal"
+          data-bs-target="#modalLogin"
+          id="btnModal"
+        ></button>
+        <button
+          type="button"
+          hidden
+          data-bs-toggle="modal"
+          data-bs-target="#modalCreateUsername"
+          id="btnModalUsername"
+        ></button>
         <div className="row row-home h-100 w-100">
           <div className="col-lg-4 order-md-2 create-section">
             <h1 className="text-center mb-4">Click battle!</h1>
@@ -101,7 +204,7 @@ function App() {
               label="Room name"
               value={roomName}
               onChange={(ref) => handleChange(ref)}
-              placeholder={`${user}'s room`}
+              placeholder={`${user.username}'s room`}
             />
           </div>
           <div className="col-lg-8 order-md-1 rooms-section">
@@ -111,14 +214,22 @@ function App() {
                 {Object.entries(listGames).map((game, i) => {
                   return (
                     <div key={i} className="col col-card mb-3">
-                      <Link to={`/${game[0]}`}>
+                      <Link to={game[1].visitorUser ? "/" : `/${game[0]}`}>
                         <div
                           className="card card-room shadow-sm"
                           onClick={() =>
-                            handleEnterGame(game[0], game[1].localUser)
+                            handleEnterGame(
+                              game[0],
+                              game[1].localUser.username,
+                              game[1].visitorUser
+                            )
                           }
                         >
-                          <div className="card-body">
+                          <div
+                            className={`card-body ${
+                              game[1].visitorUser ? "card-full" : ""
+                            }`}
+                          >
                             <p>
                               <b>
                                 {game[1].roomName !== ""
@@ -126,7 +237,11 @@ function App() {
                                   : `Sala N°${i}`}
                               </b>
                             </p>
-                            <span>Owner: {game[1].localUser}</span>
+                            <span>Owner: {game[1].localUser.username}</span>
+                          </div>
+                          <div className="txt-cant-users">
+                            <FontAwesomeIcon icon={faUser} className="mx-1" />
+                            {game[1].visitorUser ? "2/2" : "1/2"}
                           </div>
                         </div>
                       </Link>
@@ -142,8 +257,12 @@ function App() {
           </div>
         </div>
         <footer className="mt-auto">
-          {user !== null && (
-            <div className="txt-user text-center"> logged as {user}</div>
+          {user.username !== "" && (
+            <div className="txt-user text-center">
+              {" "}
+              logged as {user.username} -{" "}
+              <span onClick={() => handleLogOut()}>Log out</span>{" "}
+            </div>
           )}
           <div className="footer text-end mx-5">
             <a
@@ -160,6 +279,15 @@ function App() {
           </div>
         </footer>
       </div>
+      <ModalLogin
+        user={user}
+        loginGuest={() => handleLoginGuest()}
+        close={() => document.getElementById("btnModal").click()}
+        loginGoogle={(name) => handleLoginGoogle(name)}
+      />
+      <ModalCreateUsername
+        close={() => document.getElementById("btnModalUsername").click()}
+      />
     </>
   );
 }

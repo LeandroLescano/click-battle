@@ -1,0 +1,53 @@
+import React, { useState } from "react";
+import firebase from "firebase/app";
+import "firebase/database";
+
+function ModalCreateUsername(props) {
+  const [name, setName] = useState("");
+
+  const handleChange = (name) => {
+    if (name.length <= 15) {
+      setName(name);
+    }
+  };
+
+  const handleCreateUser = () => {
+    let key = sessionStorage.getItem("userKey");
+    firebase.database().ref(`users/${key}`).update({ username: name });
+    props.close();
+  };
+
+  return (
+    <div
+      className="modal fade"
+      id="modalCreateUsername"
+      tabIndex="-1"
+      aria-labelledby="modalCreateUsernameLabel"
+      aria-hidden="true"
+    >
+      <div className="modal-dialog modal-lg modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-body text-center">
+            <h4>Enter your username</h4>
+            <input
+              type="text"
+              className="form-name mb-2"
+              label="username"
+              value={name}
+              placeholder="Username"
+              onChange={(ref) => handleChange(ref.target.value)}
+            />
+            <button
+              className="btn-click py-2 px-3 mb-3"
+              onClick={() => handleCreateUser()}
+            >
+              Create
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default ModalCreateUsername;

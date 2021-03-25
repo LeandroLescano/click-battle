@@ -16,6 +16,15 @@ code {
     monospace;
 }
 
+#btnGoogle:focus {
+  outline: none !important;
+}
+
+#btnGoogle {
+  margin: 0 !important;
+  display: inline-block !important;
+}
+
 html,
 body {
   padding: 0;
@@ -103,6 +112,20 @@ a {
 
 .main > .row-home {
   min-height: 80vh;
+}
+
+.swal2-popup {
+  border: 1px solid gray !important;
+}
+
+.card-full {
+  /* filter: blur(2px); */
+}
+
+.txt-cant-users {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
 }
 
 @media only screen and (min-width: 768px) {
