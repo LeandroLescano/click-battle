@@ -23,6 +23,7 @@ code {
 #btnGoogle {
   margin: 0 !important;
   display: inline-block !important;
+  text-transform: none;
 }
 
 html,
@@ -89,6 +90,13 @@ a {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+.content-login-modal{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 250px;
 }
 
 .rooms-section {

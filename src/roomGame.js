@@ -15,8 +15,8 @@ function RoomGame(props) {
   const [start, setStart] = useState(false);
   const [timeToStart, setTimeToStart] = useState(3);
   const [startCountdown, setStartCountdown] = useState(false);
-  const [localUser, setLocalUser] = useState(null);
-  const [visitorUser, setVisitorUser] = useState(null);
+  const [localUser, setLocalUser] = useState({username: ""});
+  const [visitorUser, setVisitorUser] = useState({username: ""});
   const history = useHistory();
 
   //useEffect for update database when visitor or local leaves.
@@ -41,6 +41,7 @@ function RoomGame(props) {
     let id = sessionStorage.getItem("actualIDGame");
     let user = sessionStorage.getItem("user");
     let userOwner = sessionStorage.getItem("actualOwner");
+    console.log(user, userOwner);
     if (user === userOwner) {
       return () => {
         firebase.database().ref(`games/${id}`).remove();
@@ -56,6 +57,7 @@ function RoomGame(props) {
   useEffect(() => {
     let actualUser = sessionStorage.getItem("user");
     let id = window.location.pathname.slice(1);
+    let userKey = sessionStorage.getItem("userKey");
     setIdGame(id);
     sessionStorage.setItem("actualIDGame", id);
     let db = firebase.database();
@@ -71,13 +73,26 @@ function RoomGame(props) {
         } else {
           setStartCountdown(false);
         }
-        setLocalUser(snapshot.val().localUser.username);
-        if (snapshot.val().visitorUser) {
-          setVisitorUser(snapshot.val().visitorUser.username);
+        if (!!snapshot.val().visitorUser) {
+          setVisitorUser({username: snapshot.val().visitorUser.username});
+        }else{
+          setVisitorUser({username: ""})
         }
         if (snapshot.val().localUser.username === actualUser) {
+          if(userKey){
+            firebase.database().ref(`users/${userKey}`).once('value', snapshot => {
+              setLocalUser(snapshot.val());
+            })
+          }          
           setIsLocal(true);
         } else {
+          let owner = sessionStorage.getItem("actualOwner");
+          if(userKey){
+            firebase.database().ref(`users/${userKey}`).once('value', snapshot => {
+              setVisitorUser(snapshot.val());
+            })
+          }       
+          setLocalUser({username: owner})   
           setIsLocal(false);
         }
       } else {
@@ -110,6 +125,8 @@ function RoomGame(props) {
             container.innerHTML = "Draw";
           }
         }
+        // TODO update maxScore
+        // if(user)
         return;
       }
 
@@ -194,9 +211,9 @@ function RoomGame(props) {
                 </button>
                 <p className="mt-3">
                   {!isLocal
-                    ? localUser
-                    : !!visitorUser
-                    ? visitorUser
+                    ? localUser.username
+                    : visitorUser.username !== ""
+                    ? visitorUser.username
                     : "Waiting for an opponent..."}
                 </p>
               </div>
@@ -212,7 +229,7 @@ function RoomGame(props) {
                 >
                   Click
                 </button>
-                <p className="mt-3">{isLocal ? localUser : visitorUser}</p>
+                <p className="mt-3">{isLocal ? localUser.username : visitorUser.username}</p>
               </div>
             </div>
             {isLocal ? (
@@ -231,7 +248,7 @@ function RoomGame(props) {
           <div id="resultContainer" className=" text-center mb-2">
             <h1 id="result">Result</h1>
             <h2>
-              {isLocal ? visitorUser : localUser} clicks:{" "}
+              {isLocal ? visitorUser.username : localUser.username} clicks:{" "}
               {isLocal ? visitorClicks : localClicks} - Your clicks:{" "}
               {isLocal ? localClicks : visitorClicks}
             </h2>

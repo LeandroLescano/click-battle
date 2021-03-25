@@ -5,7 +5,7 @@ import GoogleButton from "react-google-button";
 
 function ModalLogin(props) {
   const [isMobile, setIsMobile] = useState(false);
-  // const [user, setUser] = useState("");
+  const [guestUser, setGuestUser] = useState("");
 
   window.addEventListener("resize", () => {
     if (window.innerWidth > 768) {
@@ -29,9 +29,16 @@ function ModalLogin(props) {
       });
   };
 
+  const handleChange = (name) => {
+    if(name.length <= 25){
+      setGuestUser(name)
+    }
+  }
+
   return (
     <div
       className="modal fade"
+      data-bs-backdrop="static"
       id="modalLogin"
       tabIndex="-1"
       aria-labelledby="modalLoginLabel"
@@ -39,33 +46,27 @@ function ModalLogin(props) {
     >
       <div className="modal-dialog modal-lg modal-dialog-centered">
         <div className="modal-content">
-          <div className="modal-header">
+          {/* <div className="modal-header text-center">
             <h5 className="modal-title" id="modalLoginLabel">
               Login
             </h5>
-            <button
-              type="button"
-              className="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div className="modal-body">
-            <div className="row">
+          </div> */}
+          <div className="modal-body content-login-modal">
+            <div className="row w-100">
               <div className="col-md-6 text-center align-self-center">
                 <h5>Login as guest</h5>
                 <input
                   type="text"
                   className="form-name mb-2"
                   label="username"
-                  value={props.user}
+                  value={guestUser}
                   placeholder="Username"
-                  onChange={(ref) => props.handleChange(ref.target.value)}
+                  onChange={(ref) => handleChange(ref.target.value)}
                 />
                 <br />
                 <button
                   className="btn-click py-2 px-3 mb-3"
-                  onClick={() => props.loginGuest()}
+                  onClick={() => props.loginGuest(guestUser)}
                 >
                   Login
                 </button>

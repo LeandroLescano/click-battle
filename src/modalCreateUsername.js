@@ -6,7 +6,7 @@ function ModalCreateUsername(props) {
   const [name, setName] = useState("");
 
   const handleChange = (name) => {
-    if (name.length <= 15) {
+    if (name.length <= 25) {
       setName(name);
     }
   };

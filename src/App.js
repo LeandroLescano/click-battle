@@ -35,13 +35,14 @@ function App() {
               });
             }
           });
-      } else {
-        document.getElementById("btnModal").click();
       }
     });
   });
 
   useEffect(() => {
+    function updateUserName(name){
+      setUser( {username: name} );
+    }
     let mounted = true;
     firebase
       .database()
@@ -56,8 +57,11 @@ function App() {
         }
       });
     let currentUser = sessionStorage.getItem("user");
+    console.log(currentUser, sessionStorage.getItem("user"))
     if (!!currentUser) {
-      setUser({ ...user, username: currentUser });
+      updateUserName(currentUser)
+    }else{
+      document.getElementById("btnModal").click();
     }
 
     return () => (mounted = false);
@@ -84,7 +88,7 @@ function App() {
       timer: 10,
     });
     sessionStorage.setItem("actualIDGame", newGameRef.key);
-    sessionStorage.setItem("actualOwner", user);
+    sessionStorage.setItem("actualOwner", user.username);
     window.location.href = "/" + newGameRef.key;
   };
 
@@ -105,8 +109,8 @@ function App() {
       if (owner !== user) {
         firebase
           .database()
-          .ref(`games/${idGame}`)
-          .update({ visitorUser: user });
+          .ref(`games/${idGame}/visitorUser`)
+          .update({ username : user.username });
       }
     }
   };
@@ -118,9 +122,7 @@ function App() {
 
   const handleLoginGuest = (user) => {
     sessionStorage.setItem("user", user);
-    let ref = firebase.database().ref("users").push();
-    ref.set({ username: user });
-    setUser(user);
+    setUser({username: user});
     document.getElementById("btnModal").click();
   };
 
@@ -141,6 +143,7 @@ function App() {
               setUser({
                 username: value[1].username,
                 maxScore: value[1].maxScore,
+                email: value[1].email,
               });
               return;
             }
@@ -168,6 +171,7 @@ function App() {
       firebase.auth().signOut();
     }
     setUser({ ...user, username: "", maxScore: 0 });
+    sessionStorage.clear("user")
     document.getElementById("btnModal").click();
   };
 
@@ -281,7 +285,7 @@ function App() {
       </div>
       <ModalLogin
         user={user}
-        loginGuest={() => handleLoginGuest()}
+        loginGuest={(name) => handleLoginGuest(name)}
         close={() => document.getElementById("btnModal").click()}
         loginGoogle={(name) => handleLoginGoogle(name)}
       />
