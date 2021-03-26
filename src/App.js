@@ -43,7 +43,17 @@ function App() {
 
   useEffect(() => {
     function updateUserName(name) {
-      setUser({ username: name });
+      let key = sessionStorage.getItem("userKey");
+      firebase
+        .database()
+        .ref(`users/${key}`)
+        .once("value", (snapshot) => {
+          setUser({
+            username: snapshot.val().username,
+            maxScore: snapshot.val().maxScore,
+            email: snapshot.val().email,
+          });
+        });
     }
     let mounted = true;
     firebase
