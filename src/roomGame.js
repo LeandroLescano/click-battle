@@ -8,15 +8,18 @@ import "./App.css";
 
 function RoomGame(props) {
   const [localClicks, setLocalClicks] = useState(0);
-  const [visitorClicks, setVisitorClicks] = useState(0);
   const [timer, setTimer] = useState(10);
   const [isLocal, setIsLocal] = useState(true);
   const [idGame, setIdGame] = useState();
   const [start, setStart] = useState(false);
   const [timeToStart, setTimeToStart] = useState(3);
   const [startCountdown, setStartCountdown] = useState(false);
-  const [localUser, setLocalUser] = useState({username: ""});
-  const [visitorUser, setVisitorUser] = useState({username: ""});
+  const [ownerUser, setownerUser] = useState({ username: "" });
+  const [visitorUser, setVisitorUser] = useState({ username: "" });
+  const [listUsers, setListUsers] = useState([
+    { username: "", clicks: 0, rol: "visitor" },
+  ]);
+  const [userGameKey, setUserGameKey] = useState("");
   const history = useHistory();
 
   //useEffect for update database when visitor or local leaves.
@@ -27,7 +30,7 @@ function RoomGame(props) {
     if (user === userOwner) {
       window.onbeforeunload = confirmExit;
       function confirmExit() {
-        firebase.database().ref(`games/${id}`).remove();
+        // firebase.database().ref(`games/${id}`).remove();
       }
     } else {
       window.onbeforeunload = confirmExit;
@@ -38,17 +41,20 @@ function RoomGame(props) {
   }, []);
 
   useEffect(() => {
-    let id = sessionStorage.getItem("actualIDGame");
+    let idGame = sessionStorage.getItem("actualIDGame");
     let user = sessionStorage.getItem("user");
     let userOwner = sessionStorage.getItem("actualOwner");
-    console.log(user, userOwner);
+    let userGameKeyLocal = sessionStorage.getItem("gameUserKey");
     if (user === userOwner) {
       return () => {
-        firebase.database().ref(`games/${id}`).remove();
+        // firebase.database().ref(`games/${idGame}`).remove();
       };
     } else {
       return () => {
-        firebase.database().ref(`games/${id}`).update({ visitorUser: null });
+        firebase
+          .database()
+          .ref(`games/${idGame}/listUsers/${userGameKeyLocal}`)
+          .remove();
       };
     }
   }, []);
@@ -58,12 +64,13 @@ function RoomGame(props) {
     let actualUser = sessionStorage.getItem("user");
     let id = window.location.pathname.slice(1);
     let userKey = sessionStorage.getItem("userKey");
+    let userGameKeyLocal = sessionStorage.getItem("gameUserKey");
+    setUserGameKey(userGameKeyLocal);
     setIdGame(id);
     sessionStorage.setItem("actualIDGame", id);
     let db = firebase.database();
     db.ref(`games/${id}/`).on("value", (snapshot) => {
       if (snapshot.val() !== null) {
-        setVisitorClicks(snapshot.val().visitor);
         setLocalClicks(snapshot.val().local);
         setTimer(snapshot.val().timer);
         setTimeToStart(snapshot.val().timeStart);
@@ -73,26 +80,42 @@ function RoomGame(props) {
         } else {
           setStartCountdown(false);
         }
-        if (!!snapshot.val().visitorUser) {
-          setVisitorUser({username: snapshot.val().visitorUser.username});
-        }else{
-          setVisitorUser({username: ""})
-        }
-        if (snapshot.val().localUser.username === actualUser) {
-          if(userKey){
-            firebase.database().ref(`users/${userKey}`).once('value', snapshot => {
-              setLocalUser(snapshot.val());
-            })
-          }          
+        let listUsers = [];
+        Object.entries(snapshot.val().listUsers).forEach((val) => {
+          let objUser = {
+            username: val[1].username,
+            clicks: val[1].clicks,
+            rol: val[1].rol,
+            key: val[0],
+          };
+          if (val[0] === userGameKeyLocal) {
+            setVisitorUser(objUser);
+            setLocalClicks(val[1].clicks);
+          }
+          listUsers.push(objUser);
+        });
+        setListUsers(listUsers);
+        if (snapshot.val().ownerUser.username === actualUser) {
+          if (userKey) {
+            firebase
+              .database()
+              .ref(`users/${userKey}`)
+              .once("value", (snapshot) => {
+                setownerUser(snapshot.val());
+              });
+          }
           setIsLocal(true);
         } else {
           let owner = sessionStorage.getItem("actualOwner");
-          if(userKey){
-            firebase.database().ref(`users/${userKey}`).once('value', snapshot => {
-              setVisitorUser(snapshot.val());
-            })
-          }       
-          setLocalUser({username: owner})   
+          if (userKey) {
+            firebase
+              .database()
+              .ref(`users/${userKey}`)
+              .once("value", (snapshot) => {
+                setVisitorUser(snapshot.val());
+              });
+          }
+          setownerUser({ username: owner });
           setIsLocal(false);
         }
       } else {
@@ -107,38 +130,18 @@ function RoomGame(props) {
     if (start) {
       if (!timer) {
         firebase.database().ref(`games/${idGame}`).update({ timer: null });
-        let container = document.getElementById("result");
         if (isLocal) {
-          if (localClicks > visitorClicks) {
-            container.innerHTML = "You win";
-          } else if (localClicks < visitorClicks) {
-            container.innerHTML = "You lose";
-          } else {
-            container.innerHTML = "Draw";
+          if (ownerUser.email) {
+            if (localClicks > ownerUser.maxScore) {
+              let key = sessionStorage.getItem("userKey");
+              firebase
+                .database()
+                .ref(`users/${key}`)
+                .update({ maxScore: localClicks });
+            }
           }
         } else {
-          if (localClicks < visitorClicks) {
-            container.innerHTML = "You win";
-          } else if (localClicks > visitorClicks) {
-            container.innerHTML = "You lose";
-          } else {
-            container.innerHTML = "Draw";
-          }
-        }
-        if(isLocal){
-          if(localUser.email){
-            if(localClicks > localUser.maxScore){
-              let key = sessionStorage.getItem("userKey");
-              firebase.database().ref(`users/${key}`).update({maxScore: localClicks})
-            }
-          }
-        }else{
-          if(visitorUser.email){
-            if(visitorClicks > visitorUser.maxScore){
-              let key = sessionStorage.getItem("userKey");
-              firebase.database().ref(`users/${key}`).update({maxScore: visitorClicks})
-            }
-          }
+          // TODO Update maxScore for visitors
         }
         return;
       }
@@ -172,17 +175,10 @@ function RoomGame(props) {
 
   //function for update clicks
   const handleClick = () => {
-    if (isLocal) {
-      firebase
-        .database()
-        .ref(`games/${idGame}`)
-        .update({ local: localClicks + 1 });
-    } else {
-      firebase
-        .database()
-        .ref(`games/${idGame}`)
-        .update({ visitor: visitorClicks + 1 });
-    }
+    firebase
+      .database()
+      .ref(`games/${idGame}/listUsers/${userGameKey}`)
+      .update({ clicks: visitorUser.clicks + 1 });
   };
 
   //function for start game
@@ -194,16 +190,22 @@ function RoomGame(props) {
   const handleReset = () => {
     firebase.database().ref(`games/${idGame}`).update({
       timer: 10,
-      local: 0,
-      visitor: 0,
       gameStart: false,
       timeStart: 3,
       currentGame: false,
     });
+    firebase
+      .database()
+      .ref(`games/${idGame}/listUsers`)
+      .once("value", (snapshot) => {
+        snapshot.forEach((child) => {
+          child.ref.update({ clicks: 0 });
+        });
+      });
   };
 
   return (
-    <div className="container">
+    <div className="container-fluid">
       <main className="main">
         <p onClick={() => history.push("/")}>Go back</p>
         <h1>Click battle</h1>
@@ -211,29 +213,22 @@ function RoomGame(props) {
           <>
             <div className="row mb-5 w-100">
               <div className="col-6 text-center">
-                <h4>
-                  Opponent has <br />
-                  {isLocal ? visitorClicks : localClicks} clicks!
-                </h4>
-                <button
-                  disabled={!start}
-                  id="visitorButton"
-                  className="btn-click"
-                >
-                  Click
-                </button>
-                <p className="mt-3">
-                  {!isLocal
-                    ? localUser.username
-                    : visitorUser.username !== ""
-                    ? visitorUser.username
-                    : "Waiting for an opponent..."}
-                </p>
+                {listUsers
+                  .filter((user) => user.key !== visitorUser.key)
+                  .map((user, i) => {
+                    return (
+                      <div className="visitor-container" key={i}>
+                        <div className="row">
+                          <div className="col">{user.username}</div>
+                          <div className="col">{user.clicks}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
               <div className="col-6 text-center">
                 <h4>
-                  You have <br /> {isLocal ? localClicks : visitorClicks}{" "}
-                  clicks!
+                  You have {isLocal ? localClicks : visitorUser.clicks} clicks!
                 </h4>
                 <button
                   className="btn-click"
@@ -242,7 +237,9 @@ function RoomGame(props) {
                 >
                   Click
                 </button>
-                <p className="mt-3">{isLocal ? localUser.username : visitorUser.username}</p>
+                <p className="mt-3">
+                  {isLocal ? ownerUser.username : visitorUser.username}
+                </p>
               </div>
             </div>
             {isLocal ? (
@@ -261,9 +258,15 @@ function RoomGame(props) {
           <div id="resultContainer" className=" text-center mb-2">
             <h1 id="result">Result</h1>
             <h2>
-              {isLocal ? visitorUser.username : localUser.username} clicks:{" "}
-              {isLocal ? visitorClicks : localClicks} - Your clicks:{" "}
-              {isLocal ? localClicks : visitorClicks}
+              {listUsers
+                .sort((a, b) => (a.clicks < b.clicks ? 1 : -1))
+                .map((user, i) => {
+                  return (
+                    <p>
+                      {user.username} with {user.clicks}
+                    </p>
+                  );
+                })}
             </h2>
             {isLocal && (
               <button className="btn-click mb-4" onClick={handleReset}>

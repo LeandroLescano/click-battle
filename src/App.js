@@ -13,6 +13,7 @@ function App() {
   const [listGames, setListGames] = useState([]);
   const [user, setUser] = useState({ username: "", maxScore: 0 });
   const [roomName, setRoomName] = useState("");
+  const [maxUsers, setMaxUsers] = useState(2);
 
   document.addEventListener("DOMContentLoaded", () => {
     firebase.auth().onAuthStateChanged((user) => {
@@ -41,8 +42,8 @@ function App() {
   });
 
   useEffect(() => {
-    function updateUserName(name){
-      setUser( {username: name} );
+    function updateUserName(name) {
+      setUser({ username: name });
     }
     let mounted = true;
     firebase
@@ -58,10 +59,10 @@ function App() {
         }
       });
     let currentUser = sessionStorage.getItem("user");
-    console.log(currentUser, sessionStorage.getItem("user"))
+    console.log(currentUser, sessionStorage.getItem("user"));
     if (!!currentUser) {
-      updateUserName(currentUser)
-    }else{
+      updateUserName(currentUser);
+    } else {
       document.getElementById("btnModal").click();
     }
 
@@ -81,21 +82,23 @@ function App() {
       roomName: newRoomName,
       currentGame: false,
       gameStart: false,
-      local: 0,
-      localUser: user,
-      visitor: 0,
+      listUsers: [{ username: user.username, clicks: 0, rol: "owner" }],
+      ownerUser: user,
       visitorUser: null,
       timeStart: 3,
       timer: 10,
+      maxUsers: +maxUsers,
     });
     sessionStorage.setItem("actualIDGame", newGameRef.key);
     sessionStorage.setItem("actualOwner", user.username);
+    sessionStorage.setItem("gameUserKey", 0);
     window.location.href = "/" + newGameRef.key;
   };
 
   //Function for enter room
-  const handleEnterGame = (idGame, owner, visitor) => {
-    if (visitor) {
+  const handleEnterGame = (idGame, owner, actualUsers, maxUsers) => {
+    console.log(Object.keys(actualUsers).length);
+    if (Object.keys(actualUsers).length === maxUsers) {
       Swal.fire({
         icon: "warning",
         title: "Room is full",
@@ -108,10 +111,11 @@ function App() {
       sessionStorage.setItem("actualIDGame", idGame);
       sessionStorage.setItem("actualOwner", owner);
       if (owner !== user) {
-        firebase
+        let userKey = firebase
           .database()
-          .ref(`games/${idGame}/visitorUser`)
-          .update({ username : user.username });
+          .ref(`games/${idGame}/listUsers`)
+          .push({ username: user.username, clicks: 0, rol: "visitor" }).key;
+        sessionStorage.setItem("gameUserKey", userKey);
       }
     }
   };
@@ -121,9 +125,15 @@ function App() {
     setRoomName(e.target.value);
   };
 
+  const handleNumberUsers = (e) => {
+    if (e.target.value <= 10 && e.target.value >= 2) {
+      setMaxUsers(e.target.value);
+    }
+  };
+
   const handleLoginGuest = (user) => {
     sessionStorage.setItem("user", user);
-    setUser({username: user});
+    setUser({ username: user });
     document.getElementById("btnModal").click();
   };
 
@@ -163,7 +173,6 @@ function App() {
           }
         }
       });
-
   };
 
   const handleLogOut = () => {
@@ -171,7 +180,7 @@ function App() {
       firebase.auth().signOut();
     }
     setUser({ ...user, username: "", maxScore: 0 });
-    sessionStorage.clear("user")
+    sessionStorage.clear("user");
     document.getElementById("btnModal").click();
   };
 
@@ -211,6 +220,14 @@ function App() {
               onChange={(ref) => handleChange(ref)}
               placeholder={`${user.username}'s room`}
             />
+            <span>Max number of users</span>
+            <input
+              type="number"
+              className="form-name mb-2"
+              label="Room name"
+              value={maxUsers}
+              onChange={(ref) => handleNumberUsers(ref)}
+            />
           </div>
           <div className="col-lg-8 order-md-1 rooms-section">
             <h2>Available rooms</h2>
@@ -219,14 +236,22 @@ function App() {
                 {Object.entries(listGames).map((game, i) => {
                   return (
                     <div key={i} className="col col-card mb-3">
-                      <Link to={game[1].visitorUser ? "/" : `/${game[0]}`}>
+                      <Link
+                        to={
+                          Object.keys(game[1].listUsers).length ===
+                          game[1].maxUsers
+                            ? "/"
+                            : `/${game[0]}`
+                        }
+                      >
                         <div
                           className="card card-room shadow-sm"
                           onClick={() =>
                             handleEnterGame(
                               game[0],
-                              game[1].localUser.username,
-                              game[1].visitorUser
+                              game[1].ownerUser.username,
+                              game[1].listUsers,
+                              game[1].maxUsers
                             )
                           }
                         >
@@ -242,11 +267,18 @@ function App() {
                                   : `Sala N°${i}`}
                               </b>
                             </p>
-                            <span>Owner: {game[1].localUser.username}</span>
+                            <span>
+                              Owner: <br />
+                              {game[1].ownerUser.username}
+                            </span>
                           </div>
                           <div className="txt-cant-users">
                             <FontAwesomeIcon icon={faUser} className="mx-1" />
-                            {game[1].visitorUser ? "2/2" : "1/2"}
+                            {game[1].listUsers
+                              ? `${Object.keys(game[1].listUsers).length}/${
+                                  game[1].maxUsers
+                                }`
+                              : `1/${game[1].maxUsers}`}
                           </div>
                         </div>
                       </Link>
@@ -283,7 +315,11 @@ function App() {
             </a>
           </div>
         </footer>
-          {user.email && <div className="score-container float-right">Max score: {user.maxScore}</div>}
+        {user.email && (
+          <div className="score-container float-right">
+            Max score: {user.maxScore}
+          </div>
+        )}
       </div>
       <ModalLogin
         user={user}

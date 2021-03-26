@@ -69,7 +69,7 @@ a {
   min-height: 100%;
 }
 
-.score-container{
+.score-container {
   position: absolute;
   right: 10px;
   top: 10px;
@@ -98,7 +98,7 @@ a {
   align-items: center;
 }
 
-.content-login-modal{
+.content-login-modal {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -138,8 +138,12 @@ a {
 
 .txt-cant-users {
   position: absolute;
-  right: 10px;
-  bottom: 10px;
+  right: 20px;
+  bottom: 15px;
+}
+
+.visitor-container {
+  border: 1px solid gray !important;
 }
 
 @media only screen and (min-width: 768px) {
