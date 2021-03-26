@@ -30,10 +30,10 @@ function ModalLogin(props) {
   };
 
   const handleChange = (name) => {
-    if(name.length <= 25){
-      setGuestUser(name)
+    if (name.length <= 25) {
+      setGuestUser(name);
     }
-  }
+  };
 
   return (
     <div
@@ -55,21 +55,24 @@ function ModalLogin(props) {
             <div className="row w-100">
               <div className="col-md-6 text-center align-self-center">
                 <h5>Login as guest</h5>
-                <input
-                  type="text"
-                  className="form-name mb-2"
-                  label="username"
-                  value={guestUser}
-                  placeholder="Username"
-                  onChange={(ref) => handleChange(ref.target.value)}
-                />
-                <br />
-                <button
-                  className="btn-click py-2 px-3 mb-3"
-                  onClick={() => props.loginGuest(guestUser)}
-                >
-                  Login
-                </button>
+                <form>
+                  <input
+                    type="text"
+                    className="form-name mb-2"
+                    label="username"
+                    value={guestUser}
+                    placeholder="Username"
+                    onChange={(ref) => handleChange(ref.target.value)}
+                  />
+                  <br />
+                  <button
+                    className="btn-click py-2 px-3 mb-3"
+                    onClick={() => props.loginGuest(guestUser)}
+                    type="submit"
+                  >
+                    Login
+                  </button>
+                </form>
               </div>
               <div
                 className={`col-md-6 text-center align-self-center ${

@@ -5,6 +5,9 @@ import "firebase/database";
 import "firebase/firebase-storage";
 import "firebase/auth";
 import "./App.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { faTrophy } from "@fortawesome/free-solid-svg-icons";
 
 function RoomGame(props) {
   const [localClicks, setLocalClicks] = useState(0);
@@ -30,7 +33,7 @@ function RoomGame(props) {
     if (user === userOwner) {
       window.onbeforeunload = confirmExit;
       function confirmExit() {
-        // firebase.database().ref(`games/${id}`).remove();
+        firebase.database().ref(`games/${id}`).remove();
       }
     } else {
       window.onbeforeunload = confirmExit;
@@ -47,7 +50,7 @@ function RoomGame(props) {
     let userGameKeyLocal = sessionStorage.getItem("gameUserKey");
     if (user === userOwner) {
       return () => {
-        // firebase.database().ref(`games/${idGame}`).remove();
+        firebase.database().ref(`games/${idGame}`).remove();
       };
     } else {
       return () => {
@@ -205,87 +208,113 @@ function RoomGame(props) {
   };
 
   return (
-    <div className="container-fluid">
-      <main className="main">
-        <p onClick={() => history.push("/")}>Go back</p>
-        <h1>Click battle</h1>
-        {timer > 0 ? (
-          <>
-            <div className="row mb-5 w-100">
-              <div className="col-6 text-center">
-                {listUsers
-                  .filter((user) => user.key !== visitorUser.key)
-                  .map((user, i) => {
-                    return (
-                      <div className="visitor-container" key={i}>
-                        <div className="row">
-                          <div className="col">{user.username}</div>
-                          <div className="col">{user.clicks}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-              <div className="col-6 text-center">
-                <h4>
-                  You have {isLocal ? localClicks : visitorUser.clicks} clicks!
-                </h4>
-                <button
-                  className="btn-click"
-                  disabled={!start}
-                  onClick={handleClick}
-                >
-                  Click
-                </button>
-                <p className="mt-3">
-                  {isLocal ? ownerUser.username : visitorUser.username}
-                </p>
-              </div>
-            </div>
-            {isLocal ? (
-              <button
-                className="btn-click mb-5"
-                disabled={!start && !!!visitorUser}
-                onClick={() => handleStart()}
-              >
-                Start!
-              </button>
-            ) : (
-              (!startCountdown || !start) && <h4>Waiting for host...</h4>
-            )}
-          </>
-        ) : (
-          <div id="resultContainer" className=" text-center mb-2">
-            <h1 id="result">Result</h1>
-            <h2>
-              {listUsers
-                .sort((a, b) => (a.clicks < b.clicks ? 1 : -1))
-                .map((user, i) => {
-                  return (
-                    <p>
-                      {user.username} with {user.clicks}
-                    </p>
-                  );
-                })}
-            </h2>
-            {isLocal && (
-              <button className="btn-click mb-4" onClick={handleReset}>
-                Reset
-              </button>
-            )}
-          </div>
-        )}
-        {timer !== undefined && (
-          <h2 className="text-center">{timer} seconds remaining!</h2>
-        )}
-        <p>You are {isLocal ? "Local" : "Visitor"}</p>
-      </main>
+    <>
       {startCountdown && timeToStart >= 0 && (
         <div className="start-countdown">
           {timeToStart === 0 ? "Go" : timeToStart}
         </div>
       )}
-    </div>
+      <div className="container-fluid">
+        <main className="main">
+          <div className="header py-4 flex-lg-row">
+            <button
+              className="btn-click p-2 btn-back me-auto mb-4"
+              onClick={() => history.push("/")}
+            >
+              <FontAwesomeIcon icon={faArrowLeft} className="mx-1" /> Go back
+            </button>
+            <h1 className="me-auto d-none d-md-block">Click battle</h1>
+          </div>
+          {timer > 0 ? (
+            <>
+              <div className="row mb-3 w-100 g-4">
+                <div className="col-md-6 text-center">
+                  <div className="row row-users-title">
+                    <div className="col-8 text-start">
+                      <p className="mb-2">Opponents</p>
+                    </div>
+                    <div className="col-4 pe-4">Clicks</div>
+                  </div>
+                  {listUsers
+                    .filter((user) => user.key !== visitorUser.key)
+                    .map((user, i) => {
+                      return (
+                        <div className="visitor-container" key={i}>
+                          <div className="row row-user">
+                            <div className="col-8 text-start">
+                              {user.username}
+                            </div>
+                            <div className="col-4">{user.clicks}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+                <div className="col-md-6 text-center">
+                  <h4>
+                    You have {isLocal ? localClicks : visitorUser.clicks}{" "}
+                    clicks!
+                  </h4>
+                  <button
+                    className="btn-click my-2"
+                    disabled={!start}
+                    onClick={handleClick}
+                  >
+                    Click
+                  </button>
+                  <p className="mt-3">
+                    {isLocal ? ownerUser.username : visitorUser.username}
+                  </p>
+                </div>
+              </div>
+              {isLocal ? (
+                <button
+                  className="btn-click mb-5"
+                  disabled={!start && listUsers.length < 2}
+                  onClick={() => handleStart()}
+                >
+                  Start!
+                </button>
+              ) : (
+                !startCountdown && !start && <h4>Waiting for host...</h4>
+              )}
+            </>
+          ) : (
+            <div
+              id="result-container"
+              className="result-container text-center mb-2"
+            >
+              <h1 id="result">Result</h1>
+              {listUsers
+                .sort((a, b) => (a.clicks < b.clicks ? 1 : -1))
+                .map((user, i) => {
+                  return (
+                    <p key={i} className="row-user">
+                      {i === 0 && (
+                        <FontAwesomeIcon icon={faTrophy} className="mx-1" />
+                      )}
+                      <b>{user.username}</b> with {user.clicks} clicks!{" "}
+                      {i === 0 && (
+                        <FontAwesomeIcon icon={faTrophy} className="mx-1" />
+                      )}
+                    </p>
+                  );
+                })}
+              {isLocal && (
+                <button className="btn-click mt-5" onClick={handleReset}>
+                  Reset
+                </button>
+              )}
+            </div>
+          )}
+          <div className="room-info">
+            {timer !== undefined && (
+              <h2 className="text-center">{timer} seconds remaining!</h2>
+            )}
+          </div>
+        </main>
+      </div>
+    </>
   );
 }
 

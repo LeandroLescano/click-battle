@@ -75,6 +75,19 @@ button {
   }
 }
 
+.row-user {
+  font-weight: 600;
+  color: $text;
+  text-transform: uppercase;
+  padding: 0.25em 1em;
+  background: $light-pink;
+  border: 2px solid $pink-border;
+  border-radius: 0.75em;
+  &:focus {
+    outline: none !important;
+  }
+}
+
 .card {
   font-weight: 600;
   color: $text;
