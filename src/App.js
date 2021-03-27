@@ -15,9 +15,11 @@ function App() {
   const [roomName, setRoomName] = useState("");
   const [maxUsers, setMaxUsers] = useState(2);
 
+  //Function for detect google acount users
   document.addEventListener("DOMContentLoaded", () => {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
+        let finded = false;
         firebase
           .database()
           .ref("users")
@@ -25,6 +27,7 @@ function App() {
             if (snapshot.val() !== null) {
               Object.entries(snapshot.val()).forEach((value) => {
                 if (value[1].email && value[1].email === user.email) {
+                  finded = true;
                   sessionStorage.setItem("user", value[1].username);
                   sessionStorage.setItem("userKey", value[0]);
                   setUser({
@@ -32,9 +35,11 @@ function App() {
                     maxScore: value[1].maxScore,
                     email: value[1].email,
                   });
-                  return;
                 }
               });
+              if (!finded) {
+                document.getElementById("btnModal").click();
+              }
             }
           });
       }
@@ -42,20 +47,29 @@ function App() {
   });
 
   useEffect(() => {
+    //If exist userKey get user from DB
     function updateUserName(name) {
       let key = sessionStorage.getItem("userKey");
-      firebase
-        .database()
-        .ref(`users/${key}`)
-        .once("value", (snapshot) => {
-          setUser({
-            username: snapshot.val().username,
-            maxScore: snapshot.val().maxScore,
-            email: snapshot.val().email,
+      if (key !== null) {
+        firebase
+          .database()
+          .ref(`users/${key}`)
+          .once("value", (snapshot) => {
+            setUser({
+              username: snapshot.val().username,
+              maxScore: snapshot.val().maxScore,
+              email: snapshot.val().email,
+            });
           });
+      } else {
+        setUser({
+          username: name,
+          maxScore: 0,
         });
+      }
     }
     let mounted = true;
+    //Get rooms of games from DB
     firebase
       .database()
       .ref(`games`)
@@ -68,8 +82,10 @@ function App() {
           setListGames({});
         }
       });
+    //If user name exist, update it on state
     let currentUser = sessionStorage.getItem("user");
     console.log(currentUser, sessionStorage.getItem("user"));
+    console.log(currentUser, !!currentUser);
     if (!!currentUser) {
       updateUserName(currentUser);
     } else {
@@ -135,18 +151,19 @@ function App() {
     setRoomName(e.target.value);
   };
 
+  //Function for update maxUsers for the new room
   const handleNumberUsers = (e) => {
-    if (e.target.value <= 10 && e.target.value >= 2) {
-      setMaxUsers(e.target.value);
-    }
+    setMaxUsers(e.target.value);
   };
 
+  //Function for login a guest user
   const handleLoginGuest = (user) => {
     sessionStorage.setItem("user", user);
     setUser({ username: user });
     document.getElementById("btnModal").click();
   };
 
+  //Function for login a Google account user
   const handleLoginGoogle = (data) => {
     //Check if user is new
     let userEmail = data.user.email;
@@ -185,12 +202,14 @@ function App() {
       });
   };
 
+  //Function for logout user.
   const handleLogOut = () => {
     if (firebase.auth().currentUser) {
       firebase.auth().signOut();
     }
     setUser({ ...user, username: "", maxScore: 0 });
     sessionStorage.clear("user");
+    sessionStorage.clear("userKey");
     document.getElementById("btnModal").click();
   };
 
@@ -231,13 +250,22 @@ function App() {
               placeholder={`${user.username}'s room`}
             />
             <span>Max number of users</span>
-            <input
-              type="number"
+            <select
               className="form-name mb-2"
               label="Room name"
               value={maxUsers}
               onChange={(ref) => handleNumberUsers(ref)}
-            />
+            >
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+            </select>
           </div>
           <div className="col-lg-8 order-md-1 rooms-section">
             <h2>Available rooms</h2>

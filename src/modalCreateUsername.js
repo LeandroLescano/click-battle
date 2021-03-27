@@ -12,7 +12,7 @@ function ModalCreateUsername(props) {
   };
 
   const handleCreateUser = () => {
-    if(name.length >= 3){
+    if (name.length >= 3) {
       let key = sessionStorage.getItem("userKey");
       firebase.database().ref(`users/${key}`).update({ username: name });
       sessionStorage.setItem("user", name);
@@ -25,6 +25,7 @@ function ModalCreateUsername(props) {
       className="modal fade"
       id="modalCreateUsername"
       data-bs-backdrop="static"
+      data-bs-keyboard="false"
       tabIndex="-1"
       aria-labelledby="modalCreateUsernameLabel"
       aria-hidden="true"

@@ -15,6 +15,14 @@ function ModalLogin(props) {
     }
   });
 
+  window.addEventListener("load", () => {
+    if (window.innerWidth > 768) {
+      setIsMobile(false);
+    } else {
+      setIsMobile(true);
+    }
+  });
+
   const handleLogin = () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     firebase
@@ -39,6 +47,7 @@ function ModalLogin(props) {
     <div
       className="modal fade"
       data-bs-backdrop="static"
+      data-bs-keyboard="false"
       id="modalLogin"
       tabIndex="-1"
       aria-labelledby="modalLoginLabel"
@@ -76,7 +85,7 @@ function ModalLogin(props) {
               </div>
               <div
                 className={`col-md-6 text-center align-self-center ${
-                  isMobile ? "border-top" : "border-start"
+                  isMobile ? "border-top mt-4 pt-4" : "border-start"
                 }`}
               >
                 <h5>Login with Google</h5>

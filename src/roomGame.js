@@ -17,7 +17,7 @@ function RoomGame(props) {
   const [start, setStart] = useState(false);
   const [timeToStart, setTimeToStart] = useState(3);
   const [startCountdown, setStartCountdown] = useState(false);
-  const [ownerUser, setownerUser] = useState({ username: "" });
+  const [ownerUser, setOwnerUser] = useState({ username: "" });
   const [visitorUser, setVisitorUser] = useState({ username: "" });
   const [listUsers, setListUsers] = useState([
     { username: "", clicks: 0, rol: "visitor" },
@@ -104,7 +104,7 @@ function RoomGame(props) {
               .database()
               .ref(`users/${userKey}`)
               .once("value", (snapshot) => {
-                setownerUser(snapshot.val());
+                setOwnerUser(snapshot.val());
               });
           }
           setIsLocal(true);
@@ -118,13 +118,17 @@ function RoomGame(props) {
                 setVisitorUser(snapshot.val());
               });
           }
-          setownerUser({ username: owner });
+          setOwnerUser({ username: owner });
           setIsLocal(false);
         }
       } else {
         history.push("/");
       }
     });
+    if (isLocal && ownerUser.username === "") {
+      let nameUserGuest = sessionStorage.getItem("user");
+      setOwnerUser({ username: nameUserGuest });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -229,12 +233,16 @@ function RoomGame(props) {
             <>
               <div className="row mb-3 w-100 g-4">
                 <div className="col-md-6 text-center">
-                  <div className="row row-users-title">
-                    <div className="col-8 text-start">
-                      <p className="mb-2">Opponents</p>
+                  {listUsers.length > 1 ? (
+                    <div className="row row-users-title">
+                      <div className="col-8 text-start">
+                        <p className="mb-2">Opponents</p>
+                      </div>
+                      <div className="col-4 pe-4">Clicks</div>
                     </div>
-                    <div className="col-4 pe-4">Clicks</div>
-                  </div>
+                  ) : (
+                    <h4>Waiting for opponents...</h4>
+                  )}
                   {listUsers
                     .filter((user) => user.key !== visitorUser.key)
                     .map((user, i) => {
@@ -284,7 +292,9 @@ function RoomGame(props) {
               id="result-container"
               className="result-container text-center mb-2"
             >
-              <h1 id="result">Result</h1>
+              <h1 id="result" className="no-select">
+                Result
+              </h1>
               {listUsers
                 .sort((a, b) => (a.clicks < b.clicks ? 1 : -1))
                 .map((user, i) => {
