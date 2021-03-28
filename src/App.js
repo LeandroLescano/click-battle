@@ -11,60 +11,33 @@ import ModalCreateUsername from "./modalCreateUsername";
 
 function App() {
   const [listGames, setListGames] = useState([]);
-  const [user, setUser] = useState({ username: "", maxScore: 0 });
+  const [user, setUser] = useState({ username: "" });
   const [roomName, setRoomName] = useState("");
   const [maxUsers, setMaxUsers] = useState(2);
-
-  //Function for detect google acount users
-  document.addEventListener("DOMContentLoaded", () => {
-    firebase.auth().onAuthStateChanged((user) => {
-      if (user) {
-        let finded = false;
-        firebase
-          .database()
-          .ref("users")
-          .on("value", (snapshot) => {
-            if (snapshot.val() !== null) {
-              Object.entries(snapshot.val()).forEach((value) => {
-                if (value[1].email && value[1].email === user.email) {
-                  finded = true;
-                  sessionStorage.setItem("user", value[1].username);
-                  sessionStorage.setItem("userKey", value[0]);
-                  setUser({
-                    username: value[1].username,
-                    maxScore: value[1].maxScore,
-                    email: value[1].email,
-                  });
-                }
-              });
-              if (!finded) {
-                document.getElementById("btnModal").click();
-              }
-            }
-          });
-      }
-    });
-  });
 
   useEffect(() => {
     //If exist userKey get user from DB
     function updateUserName(name) {
       let key = sessionStorage.getItem("userKey");
-      if (key !== null) {
+      let objUser = JSON.parse(sessionStorage.getItem("objUser"));
+      if (objUser) {
+        setUser(objUser);
+      } else if (key !== null) {
         firebase
           .database()
           .ref(`users/${key}`)
           .once("value", (snapshot) => {
-            setUser({
+            let obj = {
               username: snapshot.val().username,
               maxScore: snapshot.val().maxScore,
               email: snapshot.val().email,
-            });
+            };
+            setUser(obj);
+            sessionStorage.setItem("objUser", JSON.stringify(obj));
           });
       } else {
         setUser({
           username: name,
-          maxScore: 0,
         });
       }
     }
@@ -83,14 +56,50 @@ function App() {
         }
       });
     //If user name exist, update it on state
-    let currentUser = sessionStorage.getItem("user");
-    console.log(currentUser, sessionStorage.getItem("user"));
-    console.log(currentUser, !!currentUser);
-    if (!!currentUser) {
-      updateUserName(currentUser);
-    } else {
-      document.getElementById("btnModal").click();
-    }
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        let key = sessionStorage.getItem("userKey");
+        let objUser = JSON.parse(sessionStorage.getItem("objUser"));
+        if (objUser) {
+          setUser(objUser);
+        } else if (key) {
+          updateUserName();
+        } else {
+          let finded = false;
+          firebase
+            .database()
+            .ref("users")
+            .on("value", (snapshot) => {
+              if (snapshot.val() !== null) {
+                Object.entries(snapshot.val()).forEach((value) => {
+                  if (value[1].email && value[1].email === user.email) {
+                    finded = true;
+                    let obj = {
+                      username: value[1].username,
+                      maxScore: value[1].maxScore,
+                      email: value[1].email,
+                    };
+                    sessionStorage.setItem("user", value[1].username);
+                    sessionStorage.setItem("userKey", value[0]);
+                    setUser(obj);
+                    sessionStorage.setItem("objUser", JSON.stringify(obj));
+                  }
+                });
+                if (!finded) {
+                  document.getElementById("btnModal").click();
+                }
+              }
+            });
+        }
+      } else {
+        let currentUser = sessionStorage.getItem("user");
+        if (!!currentUser) {
+          updateUserName(currentUser);
+        } else {
+          document.getElementById("btnModal").click();
+        }
+      }
+    });
 
     return () => (mounted = false);
   }, []);
@@ -104,11 +113,19 @@ function App() {
     } else {
       newRoomName = roomName;
     }
+    let userToPush = {
+      username: user.username,
+      clicks: 0,
+      rol: "owner",
+    };
+    if (user.maxScore) {
+      userToPush["maxScore"] = user.maxScore;
+    }
     newGameRef.set({
       roomName: newRoomName,
       currentGame: false,
       gameStart: false,
-      listUsers: [{ username: user.username, clicks: 0, rol: "owner" }],
+      listUsers: [userToPush],
       ownerUser: user,
       visitorUser: null,
       timeStart: 3,
@@ -123,7 +140,6 @@ function App() {
 
   //Function for enter room
   const handleEnterGame = (idGame, owner, actualUsers, maxUsers) => {
-    console.log(Object.keys(actualUsers).length);
     if (Object.keys(actualUsers).length === maxUsers) {
       Swal.fire({
         icon: "warning",
@@ -137,10 +153,18 @@ function App() {
       sessionStorage.setItem("actualIDGame", idGame);
       sessionStorage.setItem("actualOwner", owner);
       if (owner !== user) {
+        let userToPush = {
+          username: user.username,
+          clicks: 0,
+          rol: "visitor",
+        };
+        if (user.maxScore) {
+          userToPush["maxScore"] = user.maxScore;
+        }
         let userKey = firebase
           .database()
           .ref(`games/${idGame}/listUsers`)
-          .push({ username: user.username, clicks: 0, rol: "visitor" }).key;
+          .push(userToPush).key;
         sessionStorage.setItem("gameUserKey", userKey);
       }
     }

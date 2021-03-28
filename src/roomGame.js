@@ -10,19 +10,18 @@ import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { faTrophy } from "@fortawesome/free-solid-svg-icons";
 
 function RoomGame(props) {
-  const [localClicks, setLocalClicks] = useState(0);
-  const [timer, setTimer] = useState(10);
-  const [isLocal, setIsLocal] = useState(true);
+  const [isLocal, setIsLocal] = useState(false);
   const [idGame, setIdGame] = useState();
   const [start, setStart] = useState(false);
-  const [timeToStart, setTimeToStart] = useState(3);
   const [startCountdown, setStartCountdown] = useState(false);
-  const [ownerUser, setOwnerUser] = useState({ username: "" });
   const [visitorUser, setVisitorUser] = useState({ username: "" });
   const [listUsers, setListUsers] = useState([
     { username: "", clicks: 0, rol: "visitor" },
   ]);
   const [userGameKey, setUserGameKey] = useState("");
+  const [timer, setTimer] = useState(10);
+  const [timeToStart, setTimeToStart] = useState(3);
+
   const history = useHistory();
 
   //useEffect for update database when visitor or local leaves.
@@ -66,7 +65,6 @@ function RoomGame(props) {
   useEffect(() => {
     let actualUser = sessionStorage.getItem("user");
     let id = window.location.pathname.slice(1);
-    let userKey = sessionStorage.getItem("userKey");
     let userGameKeyLocal = sessionStorage.getItem("gameUserKey");
     setUserGameKey(userGameKeyLocal);
     setIdGame(id);
@@ -74,7 +72,6 @@ function RoomGame(props) {
     let db = firebase.database();
     db.ref(`games/${id}/`).on("value", (snapshot) => {
       if (snapshot.val() !== null) {
-        setLocalClicks(snapshot.val().local);
         setTimer(snapshot.val().timer);
         setTimeToStart(snapshot.val().timeStart);
         setStart(snapshot.val().currentGame);
@@ -89,46 +86,22 @@ function RoomGame(props) {
             username: val[1].username,
             clicks: val[1].clicks,
             rol: val[1].rol,
+            maxScore: val[1].maxScore,
             key: val[0],
           };
           if (val[0] === userGameKeyLocal) {
             setVisitorUser(objUser);
-            setLocalClicks(val[1].clicks);
           }
           listUsers.push(objUser);
         });
         setListUsers(listUsers);
         if (snapshot.val().ownerUser.username === actualUser) {
-          if (userKey) {
-            firebase
-              .database()
-              .ref(`users/${userKey}`)
-              .once("value", (snapshot) => {
-                setOwnerUser(snapshot.val());
-              });
-          }
           setIsLocal(true);
-        } else {
-          let owner = sessionStorage.getItem("actualOwner");
-          if (userKey) {
-            firebase
-              .database()
-              .ref(`users/${userKey}`)
-              .once("value", (snapshot) => {
-                setVisitorUser(snapshot.val());
-              });
-          }
-          setOwnerUser({ username: owner });
-          setIsLocal(false);
         }
       } else {
         history.push("/");
       }
     });
-    if (isLocal && ownerUser.username === "") {
-      let nameUserGuest = sessionStorage.getItem("user");
-      setOwnerUser({ username: nameUserGuest });
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -137,18 +110,14 @@ function RoomGame(props) {
     if (start) {
       if (!timer) {
         firebase.database().ref(`games/${idGame}`).update({ timer: null });
-        if (isLocal) {
-          if (ownerUser.email) {
-            if (localClicks > ownerUser.maxScore) {
-              let key = sessionStorage.getItem("userKey");
-              firebase
-                .database()
-                .ref(`users/${key}`)
-                .update({ maxScore: localClicks });
-            }
+        let userKey = sessionStorage.getItem("userKey");
+        if (userKey) {
+          if (visitorUser.clicks > visitorUser.maxScore) {
+            firebase
+              .database()
+              .ref(`users/${userKey}`)
+              .update({ maxScore: visitorUser.clicks });
           }
-        } else {
-          // TODO Update maxScore for visitors
         }
         return;
       }
@@ -259,10 +228,7 @@ function RoomGame(props) {
                     })}
                 </div>
                 <div className="col-md-6 text-center">
-                  <h4>
-                    You have {isLocal ? localClicks : visitorUser.clicks}{" "}
-                    clicks!
-                  </h4>
+                  <h4>You have {visitorUser.clicks} clicks!</h4>
                   <button
                     className="btn-click my-2"
                     disabled={!start}
@@ -270,9 +236,7 @@ function RoomGame(props) {
                   >
                     Click
                   </button>
-                  <p className="mt-3">
-                    {isLocal ? ownerUser.username : visitorUser.username}
-                  </p>
+                  <p className="mt-3">{visitorUser.username}</p>
                 </div>
               </div>
               {isLocal ? (
