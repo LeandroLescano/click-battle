@@ -11,6 +11,17 @@ body {
   text-transform: uppercase;
 }
 
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #212121;
+    color: white;
+  }
+
+  .modal-content {
+    background-color: #151515;
+  }
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;

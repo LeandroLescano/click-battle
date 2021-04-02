@@ -196,7 +196,9 @@ function RoomGame(props) {
             >
               <FontAwesomeIcon icon={faArrowLeft} className="mx-1" /> Go back
             </button>
-            <h1 className="me-auto d-none d-md-block">Click battle</h1>
+            <h1 className="me-auto d-none d-md-block position-absolute">
+              Click battle
+            </h1>
           </div>
           {timer > 0 ? (
             <>

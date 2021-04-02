@@ -8,7 +8,7 @@ function ModalLogin(props) {
   const [guestUser, setGuestUser] = useState("");
 
   window.addEventListener("resize", () => {
-    if (window.innerWidth > 768) {
+    if (window.innerWidth > 992) {
       setIsMobile(false);
     } else {
       setIsMobile(true);
@@ -16,7 +16,7 @@ function ModalLogin(props) {
   });
 
   window.addEventListener("load", () => {
-    if (window.innerWidth > 768) {
+    if (window.innerWidth > 992) {
       setIsMobile(false);
     } else {
       setIsMobile(true);
@@ -55,14 +55,9 @@ function ModalLogin(props) {
     >
       <div className="modal-dialog modal-lg modal-dialog-centered">
         <div className="modal-content">
-          {/* <div className="modal-header text-center">
-            <h5 className="modal-title" id="modalLoginLabel">
-              Login
-            </h5>
-          </div> */}
           <div className="modal-body content-login-modal">
             <div className="row w-100">
-              <div className="col-md-6 text-center align-self-center">
+              <div className="col-lg-6 text-center align-self-center">
                 <h5>Login as guest</h5>
                 <form>
                   <input
@@ -84,7 +79,7 @@ function ModalLogin(props) {
                 </form>
               </div>
               <div
-                className={`col-md-6 text-center align-self-center ${
+                className={`col-lg-6 text-center align-self-center ${
                   isMobile ? "border-top mt-4 pt-4" : "border-start"
                 }`}
               >

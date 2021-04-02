@@ -6,6 +6,10 @@ $dark-pink: #f9c4d2;
 $pink-border: #b18597;
 $pink-shadow: #ffe3e2;
 
+@media (prefers-color-scheme: dark) {
+  $pink-shadow: #ffe3e217;
+}
+
 button {
   position: relative;
   display: inline-block;
