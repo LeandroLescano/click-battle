@@ -163,3 +163,32 @@ button.btn-click:active::before {
   box-shadow: 0 0 0 2px var(--pink-border), 0 0 var(--pink-shadow);
   transform: translate3d(0, 0, -1em);
 }
+
+@media only screen and (max-width: 768px) {
+  .opponents-container {
+    max-height: 212px;
+    overflow-y: auto;
+  }
+}
+
+.visitor-container {
+  animation: 0.2s ease;
+}
+
+@media screen and (min-width: 640px) {
+  .opponents-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .opponents-container::-webkit-scrollbar {
+    width: 0.5em;
+    position: absolute;
+    background: transparent;
+    overflow: overlay;
+  }
+
+  .opponents-container::-webkit-scrollbar-thumb {
+    background: var(--dark-pink);
+    border-radius: 0.5em;
+  }
+}

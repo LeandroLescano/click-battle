@@ -12,6 +12,8 @@ import { faTrophy } from "@fortawesome/free-solid-svg-icons";
 function RoomGame(props) {
   const [isLocal, setIsLocal] = useState(false);
   const [idGame, setIdGame] = useState();
+  const [roomName, setRoomName] = useState();
+  const [maxUsers, setMaxUsers] = useState(2);
   const [start, setStart] = useState(false);
   const [startCountdown, setStartCountdown] = useState(false);
   const [visitorUser, setVisitorUser] = useState({ username: "" });
@@ -24,7 +26,7 @@ function RoomGame(props) {
 
   const history = useHistory();
 
-  //useEffect for update database when visitor or local leaves.
+  //useEffects for update database when visitor or local leaves.
   useEffect(() => {
     let id = sessionStorage.getItem("actualIDGame");
     let user = sessionStorage.getItem("user");
@@ -72,9 +74,11 @@ function RoomGame(props) {
     let db = firebase.database();
     db.ref(`games/${id}/`).on("value", (snapshot) => {
       if (snapshot.val() !== null) {
+        setRoomName(snapshot.val().roomName);
         setTimer(snapshot.val().timer);
         setTimeToStart(snapshot.val().timeStart);
         setStart(snapshot.val().currentGame);
+        setMaxUsers(snapshot.val().maxUsers);
         if (snapshot.val().gameStart) {
           setStartCountdown(true);
         } else {
@@ -189,6 +193,9 @@ function RoomGame(props) {
       )}
       <div className="container-fluid">
         <main className="main">
+          <div className="room-name position-absolute d-none d-md-block">
+            {roomName}
+          </div>
           <div className="header py-4 flex-lg-row">
             <button
               className="btn-click p-2 btn-back me-auto mb-4"
@@ -196,6 +203,7 @@ function RoomGame(props) {
             >
               <FontAwesomeIcon icon={faArrowLeft} className="mx-1" /> Go back
             </button>
+            <span className="d-block d-md-none m-auto">{roomName}</span>
             <h1 className="me-auto d-none d-md-block position-absolute">
               Click battle
             </h1>
@@ -203,11 +211,13 @@ function RoomGame(props) {
           {timer > 0 ? (
             <>
               <div className="row mb-3 w-100 g-4">
-                <div className="col-md-6 text-center">
+                <div className="col-md-6 text-center opponents-container">
                   {listUsers.length > 1 ? (
                     <div className="row row-users-title">
                       <div className="col-8 text-start">
-                        <p className="mb-2">Opponents</p>
+                        <p className="mb-2">
+                          Opponents ({listUsers.length - 1}/{maxUsers - 1})
+                        </p>
                       </div>
                       <div className="col-4 pe-4">Clicks</div>
                     </div>
@@ -216,6 +226,7 @@ function RoomGame(props) {
                   )}
                   {listUsers
                     .filter((user) => user.key !== visitorUser.key)
+                    .sort((a, b) => b.clicks - a.clicks)
                     .map((user, i) => {
                       return (
                         <div className="visitor-container" key={i}>
@@ -231,26 +242,29 @@ function RoomGame(props) {
                 </div>
                 <div className="col-md-6 text-center">
                   <h4>You have {visitorUser.clicks} clicks!</h4>
-                  <button
-                    className="btn-click my-2"
-                    disabled={!start}
-                    onClick={handleClick}
-                  >
-                    Click
-                  </button>
-                  <p className="mt-3">{visitorUser.username}</p>
+                  <div className="d-flex justify-content-around">
+                    <button
+                      className="btn-click my-2"
+                      disabled={!start}
+                      onClick={handleClick}
+                    >
+                      Click
+                    </button>
+                    {isLocal && !start && !startCountdown && (
+                      <button
+                        className="btn-click my-2"
+                        disabled={!start && listUsers.length < 2}
+                        onClick={() => handleStart()}
+                      >
+                        Start!
+                      </button>
+                    )}
+                  </div>
+                  <p className="mt-3 mb-0">{visitorUser.username}</p>
                 </div>
               </div>
-              {isLocal ? (
-                <button
-                  className="btn-click mb-5"
-                  disabled={!start && listUsers.length < 2}
-                  onClick={() => handleStart()}
-                >
-                  Start!
-                </button>
-              ) : (
-                !startCountdown && !start && <h4>Waiting for host...</h4>
+              {!isLocal && !startCountdown && !start && (
+                <h4>Waiting for host...</h4>
               )}
             </>
           ) : (

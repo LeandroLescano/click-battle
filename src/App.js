@@ -42,20 +42,6 @@ function App() {
         });
       }
     }
-    let mounted = true;
-    //Get rooms of games from DB
-    firebase
-      .database()
-      .ref(`games`)
-      .on("value", (snapshot) => {
-        if (snapshot.val() !== null) {
-          if (mounted) {
-            setListGames(snapshot.val());
-          }
-        } else {
-          setListGames({});
-        }
-      });
     //If user name exist, update it on state
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
@@ -101,9 +87,27 @@ function App() {
         }
       }
     });
-
-    return () => (mounted = false);
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    //Get rooms of games from DB
+    if (user.username !== "") {
+      firebase
+        .database()
+        .ref(`games`)
+        .on("value", (snapshot) => {
+          if (snapshot.val() !== null) {
+            if (mounted) {
+              setListGames(snapshot.val());
+            }
+          } else {
+            setListGames({});
+          }
+        });
+    }
+    return () => (mounted = false);
+  }, [user.username]);
 
   //Function for create room
   const handleCreate = () => {
