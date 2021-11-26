@@ -1,0 +1,191 @@
+@import url("./styles.css");
+
+body {
+  --text: #382b22;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: uppercase;
+}
+
+.btn-logout {
+  cursor: pointer;
+  background-color: var(--dark-pink);
+  border-radius: 0.2em;
+  padding: 0 0.2em;
+  color: var(--text);
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #212121;
+    color: white;
+  }
+
+  .modal-content {
+    background-color: #151515;
+  }
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+#btnGoogle:focus {
+  outline: none !important;
+}
+
+#btnGoogle {
+  margin: 0 !important;
+  display: inline-block !important;
+  text-transform: none;
+}
+
+html,
+body {
+  padding: 0;
+  height: 100%;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.container {
+  min-height: 100vh;
+  padding: 0 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.main {
+  padding: 0.5rem 2rem 0.5rem 2rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  min-width: 50vw;
+  min-height: 100vh;
+}
+
+#root {
+  overflow-x: hidden;
+  min-height: 100%;
+}
+
+.score-container {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
+
+.start-countdown {
+  position: absolute;
+  font-size: 5rem;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.5);
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.card-room:hover {
+  cursor: pointer;
+}
+
+.create-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.content-login-modal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 250px;
+}
+
+.rooms-section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.rooms-section > h2:first-child {
+  width: 100%;
+}
+
+.rooms-section > .row {
+  flex: 1;
+}
+
+.col-card {
+  min-width: 200px;
+}
+
+.header {
+  display: flex;
+  /* flex-direction: column; */
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.main > .row-home {
+  min-height: 80vh;
+}
+
+.swal2-popup {
+  border: 1px solid gray !important;
+}
+
+.result-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: stretch;
+}
+
+.txt-cant-users {
+  position: absolute;
+  right: 20px;
+  bottom: 15px;
+}
+
+.room-info {
+  align-self: center;
+  justify-self: end;
+}
+
+@media only screen and (min-width: 768px) {
+  .rooms-section {
+    padding: 10px;
+  }
+
+  .main {
+    padding: 3rem 2rem 0.5rem 2rem;
+  }
+}
