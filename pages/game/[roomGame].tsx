@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   getDatabase,
   ref,
@@ -44,47 +44,30 @@ function RoomGame() {
   ]);
   const [timer, setTimer] = useState(10);
   const [timeToStart, setTimeToStart] = useState(3);
+  const flagEnter = useRef(false);
   const router = useRouter();
   const db = getDatabase();
   const auth = getAuth();
 
   useEffect(() => {
-    let idGame = sessionStorage.getItem("actualIDGame");
     let pathIdGame = window.location.pathname.slice(1).substring(5);
     let user = localStorage.getItem("user");
     let userOwner = sessionStorage.getItem("actualOwner");
-    onDisconnect(ref(db, `games/${idGame}/listUsers/${auth.currentUser?.uid}`))
+    onDisconnect(
+      ref(db, `games/${pathIdGame}/listUsers/${auth.currentUser?.uid}`)
+    )
       .remove()
       .catch((e) => console.error(e));
     if (user === userOwner) {
       return () => {
-        let refGame = ref(db, `games/${idGame}`);
+        let refGame = ref(db, `games/${pathIdGame}`);
         remove(refGame);
       };
     } else {
-      let refUser = ref(
-        db,
-        `games/${idGame}/listUsers/${auth.currentUser?.uid}`
-      ).ref;
-      get(refUser).then((data) => {
-        if (data.val() === null) {
-          let objUser = {
-            username: user!,
-            clicks: 0,
-            key: auth.currentUser?.uid,
-          };
-          setLocalUser(objUser);
-          let userRef = ref(db, `games/${idGame}/listUsers`);
-          if (idGame === pathIdGame) {
-            let localUserRef = child(userRef, `${auth.currentUser?.uid}`);
-            set(localUserRef, objUser);
-          }
-        }
-      });
       return () => {
         let refGame = ref(
           db,
-          `games/${idGame}/listUsers/${auth.currentUser?.uid}`
+          `games/${pathIdGame}/listUsers/${auth.currentUser?.uid}`
         );
         remove(refGame);
       };
@@ -95,6 +78,7 @@ function RoomGame() {
   useEffect(() => {
     let idGame = sessionStorage.getItem("actualIDGame");
     let pathIdGame = window.location.pathname.slice(1).substring(5);
+    let user = localStorage.getItem("user");
     // if (idGame !== pathIdGame) {
     //   router.push("/");
     //   return;
@@ -132,7 +116,6 @@ function RoomGame() {
             }
             listUsers.push(objUser);
           } else if (val[0] === auth.currentUser?.uid) {
-            router.query.kickedout = "true";
             router.push({ pathname: "/", query: { kickedOut: true } });
           }
         });
@@ -140,14 +123,33 @@ function RoomGame() {
         if (snapshot.val().ownerUser.username === actualUser) {
           setIsLocal(true);
         } else {
-          if (snapshot.val().password && idGame !== pathIdGame) {
+          if (
+            listUsers.filter((u) => u.username !== user).length ===
+            snapshot.val().maxUsers
+          ) {
+            router.push({ pathname: "/", query: { fullRoom: true } });
+            return;
+          }
+          if (
+            snapshot.val().password &&
+            idGame !== pathIdGame &&
+            !flagEnter.current
+          ) {
+            flagEnter.current = true;
             requestPassword(snapshot.val().password).then((val) => {
               if (val.isConfirmed === false) {
                 router.push("/");
+                return;
               } else {
                 sessionStorage.setItem("actualIDGame", pathIdGame);
+                addNewUserToDB(pathIdGame, user);
               }
             });
+          }
+          //Add user to DB
+          if (!flagEnter.current) {
+            flagEnter.current = true;
+            addNewUserToDB(pathIdGame, user);
           }
         }
       } else {
@@ -155,6 +157,26 @@ function RoomGame() {
       }
     });
   }, []);
+
+  const addNewUserToDB = (pathIdGame: string, user: string | null) => {
+    let refUser = ref(
+      db,
+      `games/${idGame}/listUsers/${auth.currentUser?.uid}`
+    ).ref;
+    get(refUser).then((data) => {
+      if (data.val() === null) {
+        let objUser = {
+          username: user!,
+          clicks: 0,
+          key: auth.currentUser?.uid,
+        };
+        setLocalUser(objUser);
+        let userRef = ref(db, `games/${pathIdGame}/listUsers`);
+        let localUserRef = child(userRef, `${auth.currentUser?.uid}`);
+        set(localUserRef, objUser);
+      }
+    });
+  };
 
   //useEffect for update timer in state and show result
   useEffect(() => {

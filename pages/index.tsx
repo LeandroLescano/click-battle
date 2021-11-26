@@ -50,6 +50,13 @@ const Home: NextPage = () => {
         icon: "error",
         confirmButtonText: "Ok",
       });
+    } else if (router.query.fullRoom === "true") {
+      router.replace("/");
+      Swal.fire({
+        title: "The room is full.",
+        icon: "error",
+        confirmButtonText: "Ok",
+      });
     }
     function updateUserName(name: string) {
       let key = sessionStorage.getItem("userKey");
